@@ -1,0 +1,43 @@
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  name: report-generator-service-worker
+  namespace: wish-micro
+  annotations:
+    fluxcd.io/automated: "true"
+    # This will be changed by Setonix automatically.
+    filter.fluxcd.io/chart-image: "*"
+spec:
+  releaseName: report-generator-service-worker
+  chart:
+    git: git@github.com:ContextLogic/helm-ms-cn.git
+    path: charts/simple-worker
+    ref: dev
+  values:
+    image:
+      repository: harbor.infra.wish-cn.com/wish/report-generator-service/api
+      tag: <tag>
+    fullnameOverride: report-generator-service-worker
+    port: 5556
+    wishAppLabel: report-generator-service
+    serviceAccount:
+      create: false
+      # If you are using aws resources, e.g. SQS and S3,
+      # please create a Jira ticket to SRE @yiyan to ask for role-arn.
+      #annotations:
+      #  eks.amazonaws.com/role-arn: <role-arn>
+      #  eks.amazonaws.com/audience: sts.amazonaws.com.cn
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: "5556"
+      co.elastic.logs/enabled: 'true'
+    env:
+      - name: C_FORCE_ROOT
+        value: "True"
+      - name: FLASK_ENV
+        value: dev
+    args:
+      - /bin/bash
+      - -c
+      - "/production/report_generator_service/current/report_generator_service/bin/entrypoint-worker.sh"

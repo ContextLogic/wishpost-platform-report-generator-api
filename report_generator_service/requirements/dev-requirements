@@ -1,0 +1,4 @@
+-r ./pip-requirements
+
+wish-flask[dev]==1.0.19
+pytest==6.2.4

@@ -1,0 +1,56 @@
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  name: report-generator-service
+  namespace: wish-micro
+  annotations:
+    fluxcd.io/automated: "true"
+    # This will be changed by Setonix automatically.
+    filter.fluxcd.io/chart-image: "*"
+spec:
+  releaseName: report-generator-service
+  chart:
+    git: git@github.com:ContextLogic/helm-ms-cn.git
+    path: charts/simple-micro
+    ref: dev
+  values:
+    image:
+      repository: harbor.infra.wish-cn.com/wish/report-generator-service/api
+      tag: <tag>
+    fullnameOverride: report-generator-service
+    replicaCount: 1
+    servicePort: 5555
+    wishAppLabel: report-generator-service
+    serviceAccount:
+      # Change this to true if you need to enable it.
+      create: false
+      # If you are using aws resources, e.g. SQS and S3,
+      # please create a Jira ticket to SRE @yiyan to ask for role-arn.
+      #annotations:
+      #  eks.amazonaws.com/role-arn: <role-arn>
+      #  eks.amazonaws.com/audience: sts.amazonaws.com.cn
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: "5555"
+      co.elastic.logs/enabled: 'true'
+      katalog-sync.wish.com/service-names: report-generator-service-pod
+      katalog-sync.wish.com/service-port: "5555"
+    env:
+      - name: FLASK_ENV
+        value: dev
+    args:
+      - /bin/bash
+      - -c
+      - "/production/report_generator_service/current/report_generator_service/bin/entrypoint-api.sh"
+    service:
+      annotations:
+        hermes.wish.com/service-name: report-generator-service
+    ingress:
+      # Change this to true if you need to enable it.
+      enabled: false
+      # Please follow https://wiki.wish.site/display/Infra/1.2+Add+or+update+dns+entry+for+bjs.i.wish.com to apply for dns.
+      hosts:
+        - host: report-generator-service.k8sdev.bjs.i.wish.com
+          paths:
+            - /
