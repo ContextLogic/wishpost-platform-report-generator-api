@@ -1,6 +1,8 @@
 from wish_flask.creation import create_app, create_api
 
 from report_generator_service.blueprints.hello import hello_blp
+from report_generator_service.blueprints.report import report_blp
+from report_generator_service.blueprints.template import template_blp
 
 app = create_app(
     __name__,
@@ -11,6 +13,8 @@ api = create_api(app)
 
 
 api.register_blueprint(hello_blp)
+api.register_blueprint(report_blp)
+api.register_blueprint(template_blp)
 
 if __name__ == '__main__':
     app.run(host=app.config['listener_host'], port=app.config['listener_port'])

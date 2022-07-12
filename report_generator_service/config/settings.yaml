@@ -46,6 +46,66 @@ default:
       MONGODB_SETTINGS:
         - host: dev.wishpost-mpnp.service.consul.qa
           db: report_generator
+    s3:
+      enabled: true
+      settings:
+        default:
+          # s3 type: mock, real or safe 
+          s3_type: mock
+          # app_name: optional, used for bucket name prefix, so <app_name>-<bucket_name>-<bucket_suffix>.
+          # 1. No prefix if not set. 
+          # 2. Set it to "@format {this.service_name}" to reference service_name.  
+          app_name: wishpost
+          bucket_suffix: stage
+          # 1. No suffix if not set.
+          # 2. Set it to "@format {this.current_env}" to reference running env.
+          #bucket_suffix: "@format {this.current_env}"
+          # A PyEnumMixin subclass which defines logical bucket names <bucket_name>
+          bucket_name_enum: report_generator_service.s3.buckets.Buckets
+          # The directory to save files
+          root_path: s3_tmp
+          # Host used to generate s3 object url
+          host: "localhost:5555"
+          # Protocol used to generate s3 object url
+          protocol: http
+          # Uri prefix used to generate s3 object url
+          uri_prefix: /s3-mock
+          #physical_bucket: optional, if specified, objects are only written to this bucket instead of individual buckets. 
+          #physical_bucket: wishpost-data
+        real:
+          s3_type: real
+          app_name: wishpost-stage
+          bucket_name_enum: report_generator_service.s3.buckets.Buckets
+          host: s3.cn-north-1.amazonaws.com.cn
+          region_name: cn-north-1
+          physical_bucket: wishpost-stage-finance-data
+    mq:
+      enabled: true
+      settings:
+        default:
+          # common config for both producer and worker
+          common:
+            metrics_config:
+              prometheus:
+                metrics_prefix: MQ
+            queue_config:
+              kafka:
+                host: kafka.stage.bjs.i.wish.com
+                partitions: 2
+                replicas: 1
+          # Producer settings
+          producer: {}
+          # Worker settings
+          worker:
+            task_config:
+              redis: redis://wishpost-stage.u1td7d.ng.0001.cnn1.cache.amazonaws.com.cn:6379/6
+            # Args used for running worker
+            run_args:
+              group_id: Group_Example
+              batch_size: 5
+              # port for metrics
+              port: 8889
+    
     metrics:
       enabled: true
     apm:
@@ -53,6 +113,19 @@ default:
       enable_rate: 1.0
   micro:
     dynaconf_merge: true
+  
+  google-api:
+    type: service_account
+    project_id: report-generator-service
+    private_key_id: 5e9924de79076cf3490976f8ff732e0f5e08c71e
+    private_key: -----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCekaEN0ty1xttd\nXClzNr/laHmo4mXAibMrjOIYfmGR9ODClD4JcUuwPNbqrvo1BTioaLabp/++gf0e\nVB33OLIVCt/VFxuFgE0AWdOXv/S1sesR37Lj7UDVtKl8UqRviMo1l9ocvYJYgSK5\nmDcPPDv4OgGUtErxIlJXzwIL+aqVTP229l6rtmRj1P/NjfkaJj7h+aleU7/f5yQe\nN7TZSGjp10rvuwF8i1x4q45vUCKHICcG8+/ijXqG6RW2IHsVRUbzs0RK28k1MrVU\nu9xKNHt5W/eADiuv07anyRNKmCHqeGEEcn6QfFvsuT2oxhGSuAaXCOLrhGMBSU4y\nJxwu4gMPAgMBAAECggEAAz2ALpzu3A510EqTbkJ7WV/xKUpQpsaP94V0rIHb0vSC\n3N1t0+bExsbESlD/bxkhBA/5UbHB803X5khbWs0fY0UXN262P6jt6eJSa8XR/x4Y\natBJArwhmKLAc962DX42Fsvex4eRcLPy1oGnXmBUuWKcdaimTDC8J58xsFAoJ2gL\nFFLihYlYkbT0u0gnxUP29uTdR8HeMG5jCzKFxV2srviPWhGG2vsoURdTuxOeuOGV\nryBs+QUYjZvL9VoSWUaq/kS0uuhVsNdTjd0IrpnwGOksoDkjex6Hy8V7PbRcIRxe\nCTFcH1JRRPAr1R8ZlJj6sAszkhZ5R8ePhZbrmhXjgQKBgQDeMv2l3QVBIPnrJ3r3\n+MD8O5FS5EoOiwOEB0wLPpDLvABxQUghOVZcnWD1zDZ2RRyspTmiKX/ffAc2z5GO\n9GI7nToq5q2ZaJg1m/YYvr7vCf5PBOE2nWMk96Lca9dYD8MAzz4ruAs93ZLE9sXE\nl5c8pFU3WbkGNEt8BeUdtXy5dwKBgQC2sLWnmVh/C6nUrgKEOSZdBMvcK0pQjEql\nSsTwlXiFqGbsJFcsK5PLqTMKkS3SPaxHKwkKxTKegGqYB1r8ATCG4HiGp7k8a5sw\nIAnxCKoZMfOxFXKYgHf2yqrWh1rk8nheOjasBk/44yND/oQQ8D1etBlwwIFQSezT\nop2Fxn3pKQKBgEnmwa/5q7a2pgiND/wLcvwxP6tHHE5r89ZkqukOfRAVzjvcz4Wl\nUVDqUwZNTkvVvqy5I0sI7GvDD48uSCY4p7dWGrOMF27vd7hUz+v4/P353+geIl2M\nyR3RcwxGnc+/JkdNpkraInsIB7mUrcAt/vH/YgxPvhcPK4/rUgGoi/wPAoGAebQQ\n39z1KnWPpuJhRMp5tx/52utv72b2V1UPC6LXjlrYbdnrxL4nEFbgbNq4ZsW1Hhga\nRvWFujecSzkjMJxuQnwJbtMPQKQC1zWQyeTWxEAVstOx6swyntL2qkGzmK+65jLr\ntv/hiNFv7d0BB/OzPoLGK+nie6Uzwu0i+Tp5KLkCgYBo3ctml0WobK6HxUs3weLv\n7GdQgCJHn9yR/yQUjg7YJfdaSC8oFkNYqn5P3ofB2bEWTwQBub3tb/eQdSYkh0yY\npQT4lST0C1hbZ+DdRhvPxrpSc5P3fb1ZqHbI4LxIudXuplPukZHM8CGWZlq6Js+e\nFkugJ33skleHnXxQ9o+7SQ==\n-----END PRIVATE KEY-----\n
+    client_email: report-generator-service-api@report-generator-service.iam.gserviceaccount.com
+    client_id: 109543776283367488561
+    auth_uri: https://accounts.google.com/o/oauth2/auth
+    token_uri: https://oauth2.googleapis.com/token
+    auth_provider_x509_cert_url: https://www.googleapis.com/oauth2/v1/certs
+    client_x509_cert_url: https://www.googleapis.com/robot/v1/metadata/x509/report-generator-service-api%40report-generator-service.iam.gserviceaccount.com
+
 
 
 dev:
