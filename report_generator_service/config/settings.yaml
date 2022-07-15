@@ -38,9 +38,21 @@ default:
     root:
       level: INFO
       handlers: ['stdout_handler']
+  
+  wishpost_oauth:
+    cache_manager: wishpost_oauth
 
   extensions:
     dynaconf_merge: true
+    cache_manager:
+      # if you want to cache result, you need to set it `true`
+      enabled: false
+      settings:
+        wishpost_oauth:
+          namespace: "wp_oauth:"
+          local_cache_ttl: 60
+          redis_cache_ttl: 60
+          # please set `redis_name` if you want to cache it in redis.
     mongo:
       enabled: true
       MONGODB_SETTINGS:
