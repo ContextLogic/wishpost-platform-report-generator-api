@@ -18,4 +18,20 @@ class DuplicateReportVersionException(UserException):
 
 class InvalidGoogleSheetUrlException(UserException):
    def __init__(self, data=None, **kwargs):
-      super().__init__(Error.INVALIDGOOGLEURL, msg=_(ExceptionMessage.InvalidGoogleSheetUrl), data=data, **kwargs)
+      super().__init__(Error.INVALID_GOOGLE_URL, msg=_(ExceptionMessage.InvalidGoogleSheetUrl), data=data, **kwargs)
+
+class TemplateNotFound(UserException):
+   def __init__(self, data=None, **kwargs):
+      super().__init__(Error.TEMPLATE_NOT_FOUND, msg=_(ExceptionMessage.TemplateNotFound), data=data, **kwargs)
+
+class VersionNotFound(UserException):
+   def __init__(self, data=None, **kwargs):
+      super().__init__(Error.VERSION_NOT_FOUND, msg=_(ExceptionMessage.VersionNotFound), data=data, **kwargs)
+
+class VersionArchived(UserException):
+   def __init__(self, data=None, **kwargs):
+      super().__init__(Error.VERSION_ARCHIVED, msg=_(ExceptionMessage.VersionArchived), data=data, **kwargs)
+
+class VersionActivated(UserException):
+   def __init__(self, data=None, **kwargs):
+      super().__init__(Error.VERSION_ACTIVE, msg=_(ExceptionMessage.VersionActivated), data=data, **kwargs)

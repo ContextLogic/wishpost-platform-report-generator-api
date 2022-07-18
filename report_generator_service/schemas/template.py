@@ -17,6 +17,16 @@ class AddReportTemplateRequest(object):
 @dataclass
 class TemplateStatusRequest(object):
     report_id: str
+    user: str
+
+    @validates_schema
+    def validate_request(self, data, **kwargs):
+        if not data.get('report_id'):
+            raise ValidationError('report_id must not be blank', self.__class__.__name__)
+
+@dataclass
+class VersionStatusRequest(object):
+    report_id: str
     version_id: str
     user: str
 

@@ -1,11 +1,12 @@
+from email import message
 from wish_flask.base.service import BaseService
 from wish_flask.lib.s3.abstract_s3 import BaseS3Abstraction
 from wish_flask.extensions.s3.instance import s3_real as s3
-
-from report_generator_service.schemas.general import GeneralMessageResponse
 s3: BaseS3Abstraction
 from wish_flask.log.meta import LoggingMixin
 
+from report_generator_service.schemas.general import GeneralMessageResponse
+from report_generator_service.enums.report_template_status_enum import TemplateVersionStatus, ReportTemplateStatus
 from report_generator_service.exceptions.api_exception import DuplicateReportNameException, DuplicateReportVersionException, UserException
 from report_generator_service.message.template_message import TemplateMessage
 from report_generator_service.models.report_template import ReportTemplate
@@ -49,16 +50,51 @@ class TemplateService(BaseService, LoggingMixin):
             raise ex
         
         return GeneralMessageResponse(message=TemplateMessage.NewTemplateAdded.format(report_name, version))
-
     
-    def activate_report(self, report_id:str, version_id:str):
-        raise NotImplementedError
+    def activate_template(self, template_id:str, user:str):
+        try:
+            ReportTemplate.set_template_status(template_id, ReportTemplateStatus.NORMAL, user)   
+            template = ReportTemplate.get_template_by_id(template_id)
+        except UserException as user_exception:
+            raise user_exception
+        except Exception as ex:
+            self.logger.error(ex)
+            raise ex
+        
+        return GeneralMessageResponse(message=TemplateMessage.TemplateActivated.format(template.report_name))
 
-    def archive_report(report_id:str, version_id:str):
-        raise NotImplementedError
+    def archive_template(self, template_id:str, user:str):
+        try:
+            report_name = ReportTemplate.set_template_status(template_id, ReportTemplateStatus.ARCHIVE, user)   
+        except UserException as user_exception:
+            raise user_exception
+        except Exception as ex:
+            self.logger.error(ex)
+            raise ex
+        
+        return GeneralMessageResponse(message=TemplateMessage.TemplateArchived.format(report_name))
 
-    def archive_report_template(self, template_id: str):
-        raise NotImplementedError
+    def activate_template_version(self, template_id:str, version_id:str, user:str):
+        try:
+            report_name, version = ReportTemplate.activate_template_version(template_id, version_id, user)
+        except UserException as user_exception:
+            raise user_exception
+        except Exception as ex:
+            self.logger.error(ex)
+            raise ex
+
+        return GeneralMessageResponse(message=TemplateMessage.VersionActivated.format(report_name, version))
+
+    def archive_template_version(self, template_id:str, version_id:str, user:str):
+        try:
+            report_name, version = ReportTemplate.archive_template_version(template_id, version_id, user)
+        except UserException as user_exception:
+            raise user_exception
+        except Exception as ex:
+            self.logger.error(ex)
+            raise ex
+        
+        return GeneralMessageResponse(message=TemplateMessage.VersionArchived.format(report_name, version))
 
     def find_report_template_by_name(self, template_name: str):
         raise NotImplementedError

@@ -1,9 +1,9 @@
-from enum import Enum
+from enum import IntEnum
 
-class ReportTemplateStatus(Enum):
+class TemplateVersionStatus(IntEnum):
     NORMAL = 1
     ARCHIVE = 2
 
-class ReportStatus(Enum):
+class ReportTemplateStatus(IntEnum):
     NORMAL = 1
     ARCHIVE = 2

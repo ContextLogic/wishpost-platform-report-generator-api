@@ -6,7 +6,7 @@ from wish_flask.base.blueprint import WishBlueprint
 from wish_flask.lib.instance_manager import InstanceManager
 
 from report_generator_service.schemas.general import GeneralMessageResponse
-from report_generator_service.schemas.template import TemplateStatusRequest, AddReportTemplateRequest
+from report_generator_service.schemas.template import TemplateStatusRequest, AddReportTemplateRequest, VersionStatusRequest
 from report_generator_service.services.template_service import TemplateService
 
 template_blp = WishBlueprint(
@@ -29,44 +29,39 @@ def add_new_report_template(request: AddReportTemplateRequest):
 def add_report_template(request: AddReportTemplateRequest):
     return template_service.add_template_version(request.report_name, request.version, request.google_sheet_url, request.user)
 
-
-
-@template_blp.route('/activiate-report', methods=['POST'])
-@template_blp.arguments(TemplateStatusRequest)
-@template_blp.response(data_clz=GeneralMessageResponse)
-def set_template_active(request: TemplateStatusRequest):
-    return template_service.activate_report(request.report_id, request.version_id)
-
-
 @template_blp.route('/activiate-template', methods=['POST'])
 @template_blp.arguments(TemplateStatusRequest)
 @template_blp.response(data_clz=GeneralMessageResponse)
-def set_template_active(request: TemplateStatusRequest):
-    response = template_service.activate_report_template(request.template_id)
-    raise response
-
-@template_blp.route('/archive-report', methods=['POST'])
-@template_blp.arguments(TemplateStatusRequest)
-@template_blp.response(data_clz=GeneralMessageResponse)
-def set_template_archive(request: TemplateStatusRequest):
-    response = template_service.archive_report_template(request.template_id)
-    return response
+def activate_report(request: TemplateStatusRequest):
+    return template_service.activate_template(request.report_id, request.user)
 
 @template_blp.route('/archive-template', methods=['POST'])
 @template_blp.arguments(TemplateStatusRequest)
 @template_blp.response(data_clz=GeneralMessageResponse)
-def set_template_archive(request: TemplateStatusRequest):
-    response = template_service.archive_report_template(request.template_id)
-    return response
+def archive_report(request: TemplateStatusRequest):
+    return template_service.archive_template(request.report_id, request.user)
 
-@template_blp.route('/list/archived-report', methods=['GET'])
+
+@template_blp.route('/activate-version', methods=['POST'])
+@template_blp.arguments(VersionStatusRequest)
+@template_blp.response(data_clz=GeneralMessageResponse)
+def activate_version(request:VersionStatusRequest):
+    return template_service.activate_template_version(request.report_id, request.version_id, request.user)
+
+@template_blp.route('/archive-version', methods=['POST'])
+@template_blp.arguments(VersionStatusRequest)
+@template_blp.response(data_clz=GeneralMessageResponse)
+def activate_version(request:VersionStatusRequest):
+    return template_service.archive_template_version(request.report_id, request.version_id, request.user)
+
+@template_blp.route('/list/archived-template', methods=['GET'])
+def get_report_template_archive_list():
+    raise NotImplementedError
+
+@template_blp.route('/list', methods=['GET'])
 def get_report_template_active_list():
     raise NotImplementedError
 
-@template_blp.route('/list/report', methods=['GET'])
-def get_report_template_active_list():
-    raise NotImplementedError
-
-@template_blp.route('/get-report-detail', methods=['GET'])
+@template_blp.route('/get-template-detail', methods=['GET'])
 def get_report_template_list_all():
     raise NotImplementedError
