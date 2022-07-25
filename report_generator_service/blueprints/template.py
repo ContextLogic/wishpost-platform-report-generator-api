@@ -6,7 +6,7 @@ from wish_flask.base.blueprint import WishBlueprint
 from wish_flask.lib.instance_manager import InstanceManager
 
 from report_generator_service.schemas.general import GeneralMessageResponse
-from report_generator_service.schemas.template import TemplateStatusRequest, AddReportTemplateRequest, VersionStatusRequest
+from report_generator_service.schemas.template import ListTemplateResponse, TemplateDetailResponse, TemplateQueryByIdReuest, TemplateStatusRequest, AddReportTemplateRequest, VersionStatusRequest
 from report_generator_service.services.template_service import TemplateService
 
 template_blp = WishBlueprint(
@@ -46,22 +46,26 @@ def archive_report(request: TemplateStatusRequest):
 @template_blp.arguments(VersionStatusRequest)
 @template_blp.response(data_clz=GeneralMessageResponse)
 def activate_version(request:VersionStatusRequest):
-    return template_service.activate_template_version(request.report_id, request.version_id, request.user)
+    return template_service.activate_template_version(request.report_id, request.version, request.user)
 
 @template_blp.route('/archive-version', methods=['POST'])
 @template_blp.arguments(VersionStatusRequest)
 @template_blp.response(data_clz=GeneralMessageResponse)
 def activate_version(request:VersionStatusRequest):
-    return template_service.archive_template_version(request.report_id, request.version_id, request.user)
+    return template_service.archive_template_version(request.report_id, request.version, request.user)
 
 @template_blp.route('/list/archived-template', methods=['GET'])
+@template_blp.response(data_clz=ListTemplateResponse)
 def get_report_template_archive_list():
-    raise NotImplementedError
+    return template_service.get_archive_report_templates()
 
 @template_blp.route('/list', methods=['GET'])
+@template_blp.response(data_clz=ListTemplateResponse)
 def get_report_template_active_list():
-    raise NotImplementedError
+    return template_service.get_active_report_templates()
 
 @template_blp.route('/get-template-detail', methods=['GET'])
-def get_report_template_list_all():
-    raise NotImplementedError
+@template_blp.arguments(TemplateQueryByIdReuest, location='query')
+@template_blp.response(data_clz=TemplateDetailResponse)
+def get_report_template_by_id(request:TemplateQueryByIdReuest):
+    return template_service.get_report_template_by_id(request.template_id)

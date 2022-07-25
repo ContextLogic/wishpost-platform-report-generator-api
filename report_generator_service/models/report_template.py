@@ -7,7 +7,6 @@ from report_generator_service.exceptions.api_exception import TemplateNotFound, 
 from report_generator_service.enums.report_template_status_enum import ReportTemplateStatus, TemplateVersionStatus
 
 class TemplateVersion(EmbeddedDocument, MongoOperation):
-    _id = ObjectIdField(required=True, default=ObjectId)
     version = StringField(required=True)
     google_sheet_url = StringField(required=True)
     s3_url = StringField()
@@ -29,7 +28,7 @@ class ReportTemplate(Document, MongoOperation):
     report_name = StringField(required=True)
     created_by = StringField(required=True)
     updated_by = StringField()
-    active_version = ObjectIdField(required=True)
+    active_version = StringField(required=True)
     version_list = ListField(EmbeddedDocumentField(TemplateVersion), required=True)
     status = EnumField(ReportTemplateStatus, default=ReportTemplateStatus.NORMAL)
     last_generated_time_stamp = DateField()
@@ -40,7 +39,7 @@ class ReportTemplate(Document, MongoOperation):
         cls(
             report_name = report_name,
             created_by = user,
-            active_version = new_version._id,
+            active_version = new_version.version,
             version_list = [new_version]
         ).save()
 
@@ -84,26 +83,34 @@ class ReportTemplate(Document, MongoOperation):
             return template.report_name
     
     @classmethod
-    def activate_template_version(cls, template_id:str, version_id:str, user:str):
+    def activate_template_version(cls, template_id:str, version_name:str, user:str):
         template = cls.get_template_by_id(template_id)
-        if template.active_version == version_id:
+        if template.active_version == version_name:
             return
         for version in template.version_list:
-            if str(version._id) == version_id:
+            if version.version == version_name:
                 if version.status == TemplateVersionStatus.ARCHIVE:
                     raise VersionArchived()
-                template.update_one({"$set" : {"active_version": version._id, "updated_by": user}})
-                return template.report_name, version.version
+                template.update_one({"$set" : {"active_version": version.version, "updated_by": user}})
+                return template.report_name
         raise VersionNotFound()
 
     @classmethod
-    def archive_template_version(cls, template_id:str, version_id:str, user:str):
+    def archive_template_version(cls, template_id:str, version_name:str, user:str):
         template = cls.get_template_by_id(template_id)
-        if template.active_version == version_id:
+        if template.active_version == version_name:
             raise VersionActivated()
-        ReportTemplate.update_doc({"id":template_id, "version_list._id":version_id},{"$set" : {"version_list.$.status":TemplateVersionStatus.ARCHIVE}})
-        # for version in template.version_list:
-        #     if str(version._id) == version_id and version.status != TemplateVersionStatus.ARCHIVE:
-        #         TemplateVersion.update_doc({"_id":version_id},{"$set" : {"status": TemplateVersionStatus.ARCHIVE}})
-        #         return template.report_name, version.version
+        for version in template.version_list:
+            if version.version == version_name and version.status != TemplateVersionStatus.ARCHIVE:
+                version.status = TemplateVersionStatus.ARCHIVE
+                template.update_one({"$set" : {"version_list": template.version_list}})
+                return template.report_name
         raise VersionNotFound()
+
+    @classmethod
+    def get_active_report_templates(cls):
+        return cls.find({"status": {"$in": [ReportTemplateStatus.NORMAL]}})
+
+    @classmethod
+    def get_archive_report_templates(cls):
+        return cls.find({"status": {"$in": [ReportTemplateStatus.ARCHIVE]}})

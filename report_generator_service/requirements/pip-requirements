@@ -5,3 +5,4 @@ wish-flask[metrics,prod,apm,sentry,mq,s3]==1.0.19
 google-api-python-client==2.46.0
 google-auth-httplib2==0.1.0
 google-auth-oauthlib==0.5.1
+marshmallow_enum==1.5.1

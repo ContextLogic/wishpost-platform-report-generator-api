@@ -1,7 +1,10 @@
 from email import message
+import re
 from wish_flask.base.service import BaseService
 from wish_flask.lib.s3.abstract_s3 import BaseS3Abstraction
 from wish_flask.extensions.s3.instance import s3_real as s3
+
+from report_generator_service.schemas.template import ListTemplateResponse, TemplateDetailResponse
 s3: BaseS3Abstraction
 from wish_flask.log.meta import LoggingMixin
 
@@ -74,9 +77,9 @@ class TemplateService(BaseService, LoggingMixin):
         
         return GeneralMessageResponse(message=TemplateMessage.TemplateArchived.format(report_name))
 
-    def activate_template_version(self, template_id:str, version_id:str, user:str):
+    def activate_template_version(self, template_id:str, version:str, user:str):
         try:
-            report_name, version = ReportTemplate.activate_template_version(template_id, version_id, user)
+            report_name = ReportTemplate.activate_template_version(template_id, version, user)
         except UserException as user_exception:
             raise user_exception
         except Exception as ex:
@@ -85,9 +88,9 @@ class TemplateService(BaseService, LoggingMixin):
 
         return GeneralMessageResponse(message=TemplateMessage.VersionActivated.format(report_name, version))
 
-    def archive_template_version(self, template_id:str, version_id:str, user:str):
+    def archive_template_version(self, template_id:str, version:str, user:str):
         try:
-            report_name, version = ReportTemplate.archive_template_version(template_id, version_id, user)
+            report_name = ReportTemplate.archive_template_version(template_id, version, user)
         except UserException as user_exception:
             raise user_exception
         except Exception as ex:
@@ -96,8 +99,46 @@ class TemplateService(BaseService, LoggingMixin):
         
         return GeneralMessageResponse(message=TemplateMessage.VersionArchived.format(report_name, version))
 
-    def find_report_template_by_name(self, template_name: str):
-        raise NotImplementedError
+    def get_active_report_templates(self):
+        try:
+            result = ReportTemplate.get_active_report_templates()
+        except UserException as user_exception:
+            raise user_exception
+        except Exception as ex:
+            self.logger.error(ex)
+            raise ex
+
+        return ListTemplateResponse(total=len(result), template_list=result)
+
+    def get_archive_report_templates(self):
+        try:
+            result = ReportTemplate.get_archive_report_templates()
+        except UserException as user_exception:
+            raise user_exception
+        except Exception as ex:
+            self.logger.error(ex)
+            raise ex
+
+        return ListTemplateResponse(total=len(result), template_list=result)
+
+    def get_report_template_by_id(self, template_id: str):
+        try:
+            result = ReportTemplate.get_template_by_id(template_id)
+        except UserException as user_exception:
+            raise user_exception
+        except Exception as ex:
+            self.logger.error(ex)
+            raise ex
+
+        return TemplateDetailResponse(
+            report_name = result.report_name, 
+            created_by = result.created_by,
+            updated_by = result.updated_by,
+            active_version = result.active_version,
+            version_list = result.version_list,
+            status = result.status,
+            last_generated_time_stamp = result.last_generated_time_stamp
+        )
 
     def save_template_to_s3(self, filename: str, byte_data):
         file_path = KeyFolders.REPORT_TEMPLATE.key(filename)
